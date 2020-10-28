@@ -28,13 +28,13 @@ For some types of databases, you need to create the `database` first.
 It will perform all the tasks that haven't been run yet.
 
 ```go
-	db := newMemoryDB()
-	mm := NewMigrationManger(db, Migrate)
-	mm.RegisterFunctions(
-		mm.createUsersTable,
-		mm.addAvatarToUsers,
-		mm.addEmailIndexToUsers)
-	mm.Migrate()
+db := newMemoryDB()
+mm := NewMigrationManger(db, Migrate)
+mm.RegisterFunctions(
+    mm.createUsersTable,
+    mm.addAvatarToUsers,
+    mm.addEmailIndexToUsers)
+mm.Migrate()
 ```
 
 ### Rollback
@@ -42,17 +42,17 @@ It will perform all the tasks that haven't been run yet.
 It will roll it back step by step.
 
 ```go
-    # ...
-    mm.Type = Rollback
-	mm.Migrate()
+# ...
+mm.Type = Rollback
+mm.Migrate()
 ```
 
 ### Check
 
 ```go
-    # ...
-    mm.Type = Check
-	mm.Migrate()
+# ...
+mm.Type = Check
+mm.Migrate()
 ```
 
 ## License
