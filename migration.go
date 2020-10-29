@@ -106,7 +106,7 @@ func (mm *MigrationManger) Migrate() {
 			mm.migrateDown()
 		}
 	default: // Check
-		if !mm.IsCompleted() {
+		if !isCompleted {
 			log.Fatal("Please run `-db=migrate` first")
 		}
 	}
@@ -186,8 +186,15 @@ func (mm *MigrationManger) Change(up, down changeFunc) error {
 	return nil
 }
 
-func (mm *MigrationManger) ChangeFuncWrap(sql string) changeFunc {
+func (mm *MigrationManger) ChangeFuncWrap(sqlLines ...string) changeFunc {
 	return func() error {
-		return mm.DB.Exec(sql).Error
+		return mm.DB.Transaction(func(tx *gorm.DB) error {
+			for _, sql := range sqlLines {
+				if err := tx.Exec(sql).Error; err != nil {
+					return err
+				}
+			}
+			return nil
+		})
 	}
 }
