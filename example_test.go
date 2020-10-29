@@ -7,7 +7,7 @@ import (
 	"log"
 )
 
-func (mm *migrationManger) createUsersTable() error {
+func (mm *MigrationManger) createUsersTable() error {
 	type User struct {
 		gorm.Model
 		Status       uint8  `gorm:"type:tinyint;comment:enum"`
@@ -17,14 +17,14 @@ func (mm *migrationManger) createUsersTable() error {
 	return mm.ChangeTable(&User{})
 }
 
-func (mm *migrationManger) addAvatarToUsers() error {
+func (mm *MigrationManger) addAvatarToUsers() error {
 	type User struct {
 		Avatar string `gorm:"type:text;comment:Avatar URL"`
 	}
 	return mm.ChangeColumn(&User{}, "Avatar")
 }
 
-func (mm *migrationManger) addEmailIndexToUsers() error {
+func (mm *MigrationManger) addEmailIndexToUsers() error {
 	up := mm.ChangeFuncWrap("CREATE UNIQUE INDEX idx_users_on_email ON users (email);")
 	down := mm.ChangeFuncWrap("DROP INDEX idx_users_on_email;")
 	return mm.Change(up, down)
@@ -39,7 +39,7 @@ func newMemoryDB() *gorm.DB {
 	return db
 }
 
-func customerMigrations(mm *migrationManger) []changeFunc {
+func customerMigrations(mm *MigrationManger) []changeFunc {
 	return []changeFunc{
 		mm.createUsersTable,
 		mm.addAvatarToUsers,

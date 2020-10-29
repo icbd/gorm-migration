@@ -21,7 +21,7 @@ func (sm *SchemaMigration) getFuncName() (name string) {
 	if sm.f == nil {
 		return ""
 	}
-	// like: github.com/icbd/go_hightlights/db.(*migrationManger).createUsersTable-fm
+	// like: github.com/icbd/go_hightlights/db.(*MigrationManger).createUsersTable-fm
 	name = runtime.FuncForPC(reflect.ValueOf(sm.f).Pointer()).Name()
 	splits := strings.Split(name, ".")
 	// like: createUsersTable-fm
@@ -36,15 +36,15 @@ func (sm *SchemaMigration) equal(other *SchemaMigration) bool {
 	return sm.FuncName == other.FuncName
 }
 
-type migrationManger struct {
+type MigrationManger struct {
 	DB         *gorm.DB
 	Type       MigrateType
 	Columns    []*SchemaMigration // saved in database
 	Migrations []*SchemaMigration // registered by code
 }
 
-func NewMigrationManger(db *gorm.DB, t MigrateType) *migrationManger {
-	mm := migrationManger{DB: db, Type: t}
+func NewMigrationManger(db *gorm.DB, t MigrateType) *MigrationManger {
+	mm := MigrationManger{DB: db, Type: t}
 	mm.checkTable()
 	mm.DB.Order("id ASC").Find(&mm.Columns)
 	mm.RegisterFunctions()
@@ -53,7 +53,7 @@ func NewMigrationManger(db *gorm.DB, t MigrateType) *migrationManger {
 }
 
 // RegisterFunctions fill it by user
-func (mm *migrationManger) RegisterFunctions(changeFunctions ...changeFunc) *migrationManger {
+func (mm *MigrationManger) RegisterFunctions(changeFunctions ...changeFunc) *MigrationManger {
 	mm.Migrations = []*SchemaMigration{}
 	for _, f := range changeFunctions {
 		sm := SchemaMigration{f: f}
@@ -64,7 +64,7 @@ func (mm *migrationManger) RegisterFunctions(changeFunctions ...changeFunc) *mig
 }
 
 // checkTable check and init schema_migrations table
-func (mm *migrationManger) checkTable() {
+func (mm *MigrationManger) checkTable() {
 	sm := SchemaMigration{}
 	migrator := mm.DB.Migrator()
 	if !migrator.HasTable(&sm) {
@@ -75,7 +75,7 @@ func (mm *migrationManger) checkTable() {
 }
 
 // IsCompleted fill mm Columns, and check Columns match with Migrations
-func (mm *migrationManger) IsCompleted() bool {
+func (mm *MigrationManger) IsCompleted() bool {
 	mm.DB.Order("id ASC").Find(&mm.Columns)
 
 	if len(mm.Columns) != len(mm.Migrations) {
@@ -90,7 +90,7 @@ func (mm *migrationManger) IsCompleted() bool {
 }
 
 // Migrate trigger
-func (mm *migrationManger) Migrate() {
+func (mm *MigrationManger) Migrate() {
 	isCompleted := mm.IsCompleted()
 	switch mm.Type {
 	case Migrate:
@@ -112,7 +112,7 @@ func (mm *migrationManger) Migrate() {
 	}
 }
 
-func (mm *migrationManger) migrateUp() {
+func (mm *MigrationManger) migrateUp() {
 	max := len(mm.Columns)
 	for i, sm := range mm.Migrations {
 		if i < max {
@@ -130,7 +130,7 @@ func (mm *migrationManger) migrateUp() {
 	}
 }
 
-func (mm *migrationManger) migrateDown() {
+func (mm *MigrationManger) migrateDown() {
 	columnCount := len(mm.Columns)
 	if columnCount == 0 {
 		log.Fatal("No more migration to rollback")
@@ -145,7 +145,7 @@ func (mm *migrationManger) migrateDown() {
 }
 
 // ChangeTable create or drop table
-func (mm *migrationManger) ChangeTable(dst interface{}) error {
+func (mm *MigrationManger) ChangeTable(dst interface{}) error {
 	switch mm.Type {
 	case Migrate:
 		if !mm.DB.Migrator().HasTable(dst) {
@@ -160,7 +160,7 @@ func (mm *migrationManger) ChangeTable(dst interface{}) error {
 }
 
 // ChangeColumn create or drop table
-func (mm *migrationManger) ChangeColumn(dst interface{}, column string) error {
+func (mm *MigrationManger) ChangeColumn(dst interface{}, column string) error {
 	hasColumn := mm.DB.Migrator().HasColumn(dst, column)
 	switch mm.Type {
 	case Migrate:
@@ -176,7 +176,7 @@ func (mm *migrationManger) ChangeColumn(dst interface{}, column string) error {
 }
 
 // Change migrate up or migrate down
-func (mm *migrationManger) Change(up, down changeFunc) error {
+func (mm *MigrationManger) Change(up, down changeFunc) error {
 	switch mm.Type {
 	case Migrate:
 		return up()
@@ -186,7 +186,7 @@ func (mm *migrationManger) Change(up, down changeFunc) error {
 	return nil
 }
 
-func (mm *migrationManger) ChangeFuncWrap(sql string) changeFunc {
+func (mm *MigrationManger) ChangeFuncWrap(sql string) changeFunc {
 	return func() error {
 		return mm.DB.Exec(sql).Error
 	}
